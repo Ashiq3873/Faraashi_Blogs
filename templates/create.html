@@ -1,0 +1,237 @@
+{% extends 'base.html' %}
+{% block title %}{% if edit %}Edit Article{% else %}Create Article{% endif %} - Faraashi Blogs{% endblock %}
+{% block content %}
+<section class="form-section">
+    <div class="container">
+        <div class="form-container">
+            <div class="form-header">
+                <span class="hero-eyebrow">{% if edit %}Editing{% else %}New thread{% endif %}</span>
+                <h1>{% if edit %}Edit Article{% else %}Create New Article{% endif %}</h1>
+                <p class="form-subtitle">{% if edit %}Update your story{% else %}Share your story with the world{% endif %}</p>
+            </div>
+
+            <form method="POST" action="{% if edit %}/edit/{{ blog._id }}{% else %}/create{% endif %}" class="blog-form" enctype="multipart/form-data" id="blogForm">
+                <div class="form-group">
+                    <label for="title">
+                        Article Title
+                        <span class="char-count"><span id="titleCount">0</span>/200</span>
+                    </label>
+                    <input
+                        type="text"
+                        id="title"
+                        name="title"
+                        required
+                        placeholder="Enter a compelling title for your article"
+                        maxlength="200"
+                        value="{{ blog.title if blog else '' }}"
+                    >
+                    <small class="form-hint">A strong title is the first thread a reader pulls</small>
+                </div>
+
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="author">Author Name</label>
+                        <input
+                            type="text"
+                            id="author"
+                            name="author"
+                            placeholder="Your name or pen name"
+                            value="{{ blog.author if blog and blog.author else 'Admin' }}"
+                        >
+                    </div>
+
+                    <div class="form-group">
+                        <label for="category">Category</label>
+                        <select id="category" name="category">
+                            <option value="General" {% if blog and blog.category == 'General' %}selected{% endif %}>General</option>
+                            <option value="Technology" {% if blog and blog.category == 'Technology' %}selected{% endif %}>Technology</option>
+                            <option value="Lifestyle" {% if blog and blog.category == 'Lifestyle' %}selected{% endif %}>Lifestyle</option>
+                            <option value="Travel" {% if blog and blog.category == 'Travel' %}selected{% endif %}>Travel</option>
+                            <option value="Food" {% if blog and blog.category == 'Food' %}selected{% endif %}>Food</option>
+                            <option value="Business" {% if blog and blog.category == 'Business' %}selected{% endif %}>Business</option>
+                            <option value="Health" {% if blog and blog.category == 'Health' %}selected{% endif %}>Health</option>
+                            <option value="Education" {% if blog and blog.category == 'Education' %}selected{% endif %}>Education</option>
+                            <option value="Entertainment" {% if blog and blog.category == 'Entertainment' %}selected{% endif %}>Entertainment</option>
+                            <option value="Personal" {% if blog and blog.category == 'Personal' %}selected{% endif %}>Personal</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label for="tagsDisplay">Tags</label>
+                    <div class="tag-input-box" id="tagInputBox">
+                        <input type="text" id="tagsDisplay" placeholder="Type a tag and press Enter…">
+                    </div>
+                    <input type="hidden" name="tags" id="tagsHidden" value="{{ blog.tags|join(', ') if blog and blog.tags else '' }}">
+                    <small class="form-hint">Press Enter or comma to add each tag</small>
+                </div>
+
+                <div class="form-group">
+                    <label for="image">Cover Image</label>
+                    <div class="file-upload-wrapper">
+                        <input
+                            type="file"
+                            id="image"
+                            name="image"
+                            accept="image/*"
+                            class="file-input"
+                        >
+                        <label for="image" class="file-upload-label">
+                            <span class="file-upload-icon">📷</span>
+                            <span class="file-upload-text">Choose an image or drag and drop</span>
+                            <span class="file-upload-subtext">PNG, JPG, GIF up to 10MB</span>
+                        </label>
+                        <div id="image-preview" class="image-preview">
+                            <button type="button" class="image-preview-remove" id="removeImage" aria-label="Remove image">×</button>
+                        </div>
+                    </div>
+                    <small class="form-hint">Optional: Add a cover image to make your article stand out</small>
+                </div>
+
+                <div class="form-group">
+                    <label for="content">
+                        Article Content
+                        <span class="char-count"><span id="wordCount">0</span> words · <span id="readTime">0</span> min read</span>
+                    </label>
+                    <textarea
+                        id="content"
+                        name="content"
+                        required
+                        placeholder="Write your article content here... You can use HTML formatting."
+                        rows="15"
+                    >{{ blog.content if blog else '' }}</textarea>
+                    <small class="form-hint">HTML formatting is supported</small>
+                </div>
+
+                <div class="form-group">
+                    <label class="checkbox-label">
+                        <input type="checkbox" name="published" id="published" {% if not edit or (blog and blog.published) %}checked{% endif %}>
+                        <span>Publish immediately (uncheck to save as draft)</span>
+                    </label>
+                </div>
+
+                <div class="form-actions">
+                    <a href="/" class="btn btn-secondary">Cancel</a>
+                    <button type="submit" class="btn btn-primary">{% if edit %}Save Changes{% else %}Publish Article{% endif %}</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</section>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    // Title character counter
+    const titleInput = document.getElementById('title');
+    const titleCount = document.getElementById('titleCount');
+    function updateTitleCount() { titleCount.textContent = titleInput.value.length; }
+    titleInput.addEventListener('input', updateTitleCount);
+    updateTitleCount();
+
+    // Word count / reading time
+    const contentInput = document.getElementById('content');
+    const wordCount = document.getElementById('wordCount');
+    const readTime = document.getElementById('readTime');
+    function updateWordCount() {
+        const words = contentInput.value.replace(/<[^>]*>/g, ' ').trim().split(/\s+/).filter(Boolean).length;
+        wordCount.textContent = words;
+        readTime.textContent = Math.max(1, Math.ceil(words / 200));
+    }
+    contentInput.addEventListener('input', updateWordCount);
+    updateWordCount();
+
+    // Tag pill input
+    const tagInputBox = document.getElementById('tagInputBox');
+    const tagsDisplay = document.getElementById('tagsDisplay');
+    const tagsHidden = document.getElementById('tagsHidden');
+    let tags = tagsHidden.value ? tagsHidden.value.split(',').map(t => t.trim()).filter(Boolean) : [];
+
+    function renderTags() {
+        tagInputBox.querySelectorAll('.tag-pill').forEach(el => el.remove());
+        tags.forEach((tag, i) => {
+            const pill = document.createElement('span');
+            pill.className = 'tag-pill';
+            pill.innerHTML = tag.replace(/</g, '&lt;') + ' <button type="button" aria-label="Remove tag">×</button>';
+            pill.querySelector('button').addEventListener('click', () => {
+                tags.splice(i, 1);
+                syncTags();
+            });
+            tagInputBox.insertBefore(pill, tagsDisplay);
+        });
+        tagsHidden.value = tags.join(', ');
+    }
+    function syncTags() { renderTags(); }
+
+    tagsDisplay.addEventListener('keydown', function(e) {
+        if (e.key === 'Enter' || e.key === ',') {
+            e.preventDefault();
+            const val = tagsDisplay.value.trim().replace(/,$/, '');
+            if (val && !tags.includes(val)) { tags.push(val); syncTags(); }
+            tagsDisplay.value = '';
+        } else if (e.key === 'Backspace' && !tagsDisplay.value && tags.length) {
+            tags.pop();
+            syncTags();
+        }
+    });
+    renderTags();
+
+    // Image upload preview
+    const fileInput = document.getElementById('image');
+    const imagePreview = document.getElementById('image-preview');
+    const fileUploadLabel = document.querySelector('.file-upload-label');
+    const removeImageBtn = document.getElementById('removeImage');
+
+    function showPreview(file) {
+        const reader = new FileReader();
+        reader.onload = function(e) {
+            imagePreview.innerHTML = `<img src="${e.target.result}" alt="Preview"><button type="button" class="image-preview-remove" id="removeImage" aria-label="Remove image">×</button>`;
+            imagePreview.style.display = 'block';
+            fileUploadLabel.style.display = 'none';
+            document.getElementById('removeImage').addEventListener('click', clearImage);
+        }
+        reader.readAsDataURL(file);
+    }
+    function clearImage() {
+        fileInput.value = '';
+        imagePreview.style.display = 'none';
+        imagePreview.innerHTML = '';
+        fileUploadLabel.style.display = 'flex';
+    }
+    removeImageBtn.addEventListener('click', clearImage);
+
+    fileInput.addEventListener('change', function(e) {
+        const file = e.target.files[0];
+        if (file) showPreview(file);
+    });
+
+    const fileUploadWrapper = document.querySelector('.file-upload-wrapper');
+    fileUploadWrapper.addEventListener('dragover', function(e) {
+        e.preventDefault();
+        fileUploadLabel.style.borderColor = 'var(--thread-marigold)';
+        fileUploadLabel.style.background = 'rgba(232,163,61,0.08)';
+    });
+    fileUploadWrapper.addEventListener('dragleave', function(e) {
+        e.preventDefault();
+        fileUploadLabel.style.borderColor = 'var(--border-thread)';
+        fileUploadLabel.style.background = 'var(--bg-inset)';
+    });
+    fileUploadWrapper.addEventListener('drop', function(e) {
+        e.preventDefault();
+        fileUploadLabel.style.borderColor = 'var(--border-thread)';
+        fileUploadLabel.style.background = 'var(--bg-inset)';
+        const file = e.dataTransfer.files[0];
+        if (file && file.type.startsWith('image/')) {
+            fileInput.files = e.dataTransfer.files;
+            showPreview(file);
+        }
+    });
+
+    // Keep tags in sync even if the form is submitted while a tag is mid-typing
+    document.getElementById('blogForm').addEventListener('submit', function() {
+        const val = tagsDisplay.value.trim();
+        if (val && !tags.includes(val)) tags.push(val);
+        tagsHidden.value = tags.join(', ');
+    });
+</script>
+{% endblock %}

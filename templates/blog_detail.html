@@ -1,0 +1,103 @@
+{% extends 'base.html' %}
+{% block title %}{{ blog.title }} - Faraashi Blogs{% endblock %}
+{% block content %}
+<article class="blog-detail">
+    <div class="container">
+        <div class="blog-detail-header">
+            <a href="/" class="back-link">← Back to Articles</a>
+            {% if blog.category %}<span class="featured-tag">{{ blog.category }}</span>{% endif %}
+            <h1 class="blog-detail-title">{{ blog.title }}</h1>
+            <div class="blog-detail-meta">
+                <span class="author-badge">
+                    <span class="author-avatar">{{ (blog.author or 'A')[0]|upper }}</span>
+                    {{ blog.author or 'Admin' }}
+                </span>
+                <span>Published {{ blog.created_at.strftime('%B %d, %Y') if blog.created_at else 'Recently' }}</span>
+                {% if blog.updated_at and blog.updated_at != blog.created_at %}
+                <span>Updated {{ blog.updated_at.strftime('%B %d, %Y') }}</span>
+                {% endif %}
+                <span>{{ ((blog.content|striptags).split()|length / 200)|round(0, 'ceil')|int }} min read</span>
+            </div>
+        </div>
+
+        {% if blog.image_url %}
+        <div class="blog-detail-image">
+            <img src="{{ blog.image_url }}" alt="{{ blog.title }}">
+        </div>
+        {% endif %}
+
+        <div class="blog-detail-body">
+            {{ blog.content|safe }}
+        </div>
+
+        {% if blog.tags %}
+        <div class="blog-detail-tags">
+            {% for tag in blog.tags %}
+            <span class="tag-chip">{{ tag }}</span>
+            {% endfor %}
+        </div>
+        {% endif %}
+
+        <div class="share-bar">
+            <span>Share this story</span>
+            <a class="share-link" href="https://twitter.com/intent/tweet?text={{ blog.title|urlencode }}" target="_blank" rel="noopener" aria-label="Share on X">𝕏</a>
+            <a class="share-link" href="https://www.facebook.com/sharer/sharer.php?u={{ request.url|urlencode }}" target="_blank" rel="noopener" aria-label="Share on Facebook">f</a>
+            <a class="share-link" href="https://www.linkedin.com/sharing/share-offsite/?url={{ request.url|urlencode }}" target="_blank" rel="noopener" aria-label="Share on LinkedIn">in</a>
+            <a class="share-link" href="mailto:?subject={{ blog.title|urlencode }}&body={{ request.url|urlencode }}" aria-label="Share by email">✉</a>
+            <a class="share-link" href="#" id="copyLinkBtn" aria-label="Copy link" title="Copy link">⧉</a>
+        </div>
+
+        <div class="blog-detail-footer">
+            <div class="blog-actions">
+                <a href="/" class="btn btn-secondary">Browse More Articles</a>
+                {% if session.logged_in %}
+                <a href="/edit/{{ blog._id }}" class="btn btn-primary">Edit Article</a>
+                <form action="/delete/{{ blog._id }}" method="POST" class="delete-form" onsubmit="return confirm('Are you sure you want to delete this article?');">
+                    <button type="submit" class="btn btn-danger">Delete</button>
+                </form>
+                {% endif %}
+            </div>
+        </div>
+
+        {% if related and related|length > 0 %}
+        <div class="related-posts">
+            <div class="thread-divider"><span>You might also like</span></div>
+            <div class="related-grid">
+                {% for r in related %}
+                <article class="blog-card">
+                    {% if r.image_url %}
+                    <div class="blog-image"><img src="{{ r.image_url }}" alt="{{ r.title }}" loading="lazy"></div>
+                    {% else %}
+                    <div class="blog-image-placeholder">F</div>
+                    {% endif %}
+                    <div class="blog-content">
+                        <h3 class="blog-title"><a href="/blog/{{ r._id }}">{{ r.title }}</a></h3>
+                        <div class="blog-meta">
+                            <span class="blog-date">{{ r.created_at.strftime('%b %d, %Y') if r.created_at else 'Recent' }}</span>
+                            <a href="/blog/{{ r._id }}" class="read-more">Read →</a>
+                        </div>
+                    </div>
+                </article>
+                {% endfor %}
+            </div>
+        </div>
+        {% endif %}
+    </div>
+</article>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    const copyBtn = document.getElementById('copyLinkBtn');
+    if (copyBtn) {
+        copyBtn.addEventListener('click', function(e) {
+            e.preventDefault();
+            navigator.clipboard.writeText(window.location.href).then(() => {
+                const original = copyBtn.textContent;
+                copyBtn.textContent = '✓';
+                setTimeout(() => { copyBtn.textContent = original; }, 1500);
+            });
+        });
+    }
+</script>
+{% endblock %}

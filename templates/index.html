@@ -1,0 +1,179 @@
+{% extends 'base.html' %}
+{% block title %}Home - Faraashi Blogs{% endblock %}
+{% block content %}
+
+<section class="hero-section">
+    <div class="container">
+        <div class="hero-content">
+            <span class="hero-eyebrow">Stories, unrolled</span>
+            <h1>Welcome to Faraashi Blogs</h1>
+            <p>A woven collection of stories, insights, and perspectives — pull up a corner of the carpet and stay a while.</p>
+            <div class="hero-stats">
+                <div class="hero-stat">
+                    <strong>{{ blogs|length }}</strong>
+                    <span>Articles</span>
+                </div>
+                <div class="hero-stat">
+                    <strong>{{ blogs|map(attribute='category')|select|unique|list|length }}</strong>
+                    <span>Categories</span>
+                </div>
+                <div class="hero-stat">
+                    <strong>{{ blogs|map(attribute='tags')|select|sum(start=[])|unique|list|length }}</strong>
+                    <span>Tags</span>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<section class="blogs-section">
+    <div class="container">
+
+        {% if blogs %}
+        {% set featured = blogs[0] %}
+        <article class="featured-post">
+            <div class="featured-image">
+                {% if featured.image_url %}
+                <img src="{{ featured.image_url }}" alt="{{ featured.title }}">
+                {% else %}
+                <div class="blog-image-placeholder" style="height:100%;">F</div>
+                {% endif %}
+            </div>
+            <div class="featured-body">
+                <span class="featured-tag">Latest story</span>
+                <h2><a href="/blog/{{ featured._id }}">{{ featured.title }}</a></h2>
+                <p class="blog-excerpt">{{ featured.content|striptags|truncate(220) }}</p>
+                <div class="blog-meta" style="border:none; padding-top:0;">
+                    <span class="blog-date">{{ featured.created_at.strftime('%B %d, %Y') if featured.created_at else 'Recent' }} · by {{ featured.author or 'Admin' }}</span>
+                    <a href="/blog/{{ featured._id }}" class="read-more">Read More →</a>
+                </div>
+            </div>
+        </article>
+        {% endif %}
+
+        <div class="section-header">
+            <h2>Latest Articles</h2>
+            <p class="section-subtitle">Explore our most recent publications</p>
+        </div>
+
+        {% if blogs %}
+        <div class="filter-bar" id="categoryFilters">
+            <button class="filter-pill active" data-category="all">All</button>
+            {% for cat in blogs|map(attribute='category')|select|unique|list %}
+            <button class="filter-pill" data-category="{{ cat }}">{{ cat }}</button>
+            {% endfor %}
+        </div>
+
+        <div style="max-width:420px; margin: 0 auto var(--sp-xl);">
+            <div class="dashboard-search">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+                <input type="text" id="gridSearch" placeholder="Filter by title or tag…">
+            </div>
+        </div>
+
+        <div class="blogs-grid" id="blogsGrid">
+            {% for blog in blogs %}
+            <article class="blog-card" data-category="{{ blog.category or 'General' }}" data-search="{{ (blog.title ~ ' ' ~ (blog.tags|join(' ') if blog.tags else ''))|lower }}">
+                {% if blog.image_url %}
+                <div class="blog-image">
+                    <img src="{{ blog.image_url }}" alt="{{ blog.title }}" loading="lazy">
+                </div>
+                {% else %}
+                <div class="blog-image-placeholder">F</div>
+                {% endif %}
+                <div class="blog-content">
+                    {% if blog.category %}<span class="blog-category">{{ blog.category }}</span>{% endif %}
+                    <h3 class="blog-title">
+                        <a href="/blog/{{ blog._id }}">{{ blog.title }}</a>
+                    </h3>
+                    <p class="blog-excerpt">{{ blog.content|striptags|truncate(140) }}</p>
+                    {% if blog.tags %}
+                    <div class="blog-tags">
+                        {% for tag in blog.tags[:3] %}
+                        <span class="tag-chip">{{ tag }}</span>
+                        {% endfor %}
+                    </div>
+                    {% endif %}
+                    <div class="blog-meta">
+                        <span class="blog-date">{{ blog.created_at.strftime('%b %d, %Y') if blog.created_at else 'Recent' }}</span>
+                        <span class="blog-readtime">{{ ((blog.content|striptags).split()|length / 200)|round(0, 'ceil')|int }} min read</span>
+                    </div>
+                </div>
+            </article>
+            {% endfor %}
+        </div>
+
+        <p id="noResults" style="display:none; text-align:center; color: var(--ink-muted); margin-top: var(--sp-xl); font-family: var(--font-ui);">No stories match that search — try another thread.</p>
+
+        <div class="newsletter-section">
+            <h3>Follow the loom</h3>
+            <p>Get new Faraashi stories dropped straight into your inbox. No spam, just stories.</p>
+            <form class="newsletter-form" onsubmit="event.preventDefault(); this.querySelector('button').textContent='Subscribed ✓'; this.querySelector('input').value='';">
+                <input type="email" placeholder="you@example.com" required>
+                <button type="submit" class="btn btn-primary">Subscribe</button>
+            </form>
+        </div>
+
+        {% else %}
+        <div class="empty-state">
+            <div class="empty-icon">📝</div>
+            <h3>No articles yet</h3>
+            <p>Be the first to share your thoughts with the world</p>
+            {% if session.logged_in %}
+            <a href="/create" class="btn btn-primary">Create Your First Post</a>
+            {% endif %}
+        </div>
+        {% endif %}
+    </div>
+</section>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    // Category filter pills
+    const filterButtons = document.querySelectorAll('#categoryFilters .filter-pill');
+    const cards = document.querySelectorAll('#blogsGrid .blog-card');
+    const noResults = document.getElementById('noResults');
+    const gridSearch = document.getElementById('gridSearch');
+
+    function applyFilters() {
+        const activeCategory = document.querySelector('#categoryFilters .filter-pill.active')?.dataset.category || 'all';
+        const query = (gridSearch?.value || '').trim().toLowerCase();
+        let visible = 0;
+        cards.forEach(card => {
+            const matchesCategory = activeCategory === 'all' || card.dataset.category === activeCategory;
+            const matchesSearch = !query || card.dataset.search.includes(query);
+            const show = matchesCategory && matchesSearch;
+            card.style.display = show ? '' : 'none';
+            if (show) visible++;
+        });
+        if (noResults) noResults.style.display = visible === 0 ? 'block' : 'none';
+    }
+
+    filterButtons.forEach(btn => {
+        btn.addEventListener('click', () => {
+            filterButtons.forEach(b => b.classList.remove('active'));
+            btn.classList.add('active');
+            applyFilters();
+        });
+    });
+
+    if (gridSearch) {
+        gridSearch.addEventListener('input', applyFilters);
+        const params = new URLSearchParams(window.location.search);
+        if (params.get('q')) { gridSearch.value = params.get('q'); applyFilters(); }
+    }
+
+    // Prevent the header search form from doing a full navigation when we're
+    // already on the home page — just sync it into the grid filter instead.
+    const headerSearchForm = document.querySelector('.nav-search');
+    if (headerSearchForm && gridSearch) {
+        headerSearchForm.addEventListener('submit', function(e) {
+            e.preventDefault();
+            gridSearch.value = document.getElementById('siteSearch').value;
+            applyFilters();
+            document.getElementById('blogsGrid').scrollIntoView({ behavior: 'smooth' });
+        });
+    }
+</script>
+{% endblock %}

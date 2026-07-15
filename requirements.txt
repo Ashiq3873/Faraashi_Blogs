@@ -1,0 +1,6 @@
+Flask==3.0.*
+Flask-PyMongo
+python-dotenv
+cloudinary
+Flask-WTF
+Werkzeug

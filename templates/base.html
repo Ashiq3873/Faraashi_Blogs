@@ -1,0 +1,400 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Faraashi Blogs — every story, unrolled like a carpet.">
+    <title>{% block title %}Faraashi Blogs{% endblock %}</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,600;9..144,700;9..144,900&family=Inter:wght@300;400;500;600;700&family=Merriweather:wght@300;400;700&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+    {% block head %}{% endblock %}
+</head>
+<body>
+    <div class="scroll-progress" id="scrollProgress"></div>
+    <div class="woven-border-top"></div>
+    
+    <!-- Animated Background -->
+    <div class="animated-background" id="animatedBackground"></div>
+    
+    <!-- Custom Cursor -->
+    <div class="custom-cursor" id="customCursor"></div>
+    <div class="cursor-trail" id="cursorTrail"></div>
+    
+    <!-- Animated Flying Bird -->
+    <div class="flying-bird" id="flyingBird">
+        <svg viewBox="0 0 100 100" class="bird-svg">
+            <defs>
+                <linearGradient id="birdGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+                    <stop offset="0%" style="stop-color:#8b5cf6;stop-opacity:1" />
+                    <stop offset="100%" style="stop-color:#f59e0b;stop-opacity:1" />
+                </linearGradient>
+            </defs>
+            <path class="bird-body" d="M50,30 Q30,25 20,35 Q10,45 15,55 Q20,65 35,60 Q50,55 65,60 Q80,65 85,55 Q90,45 80,35 Q70,25 50,30 Z" fill="url(#birdGradient)"/>
+            <path class="bird-wing-left" d="M30,40 Q15,30 10,45 Q15,50 30,45 Z" fill="#a78bfa">
+                <animate attributeName="d" dur="0.3s" repeatCount="indefinite"
+                    values="M30,40 Q15,30 10,45 Q15,50 30,45 Z;M30,38 Q12,28 8,43 Q12,48 30,43 Z;M30,40 Q15,30 10,45 Q15,50 30,45 Z"/>
+            </path>
+            <path class="bird-wing-right" d="M70,40 Q85,30 90,45 Q85,50 70,45 Z" fill="#a78bfa">
+                <animate attributeName="d" dur="0.3s" repeatCount="indefinite"
+                    values="M70,40 Q85,30 90,45 Q85,50 70,45 Z;M70,38 Q88,28 92,43 Q88,48 70,43 Z;M70,40 Q85,30 90,45 Q85,50 70,45 Z"/>
+            </path>
+            <circle class="bird-eye" cx="40" cy="42" r="3" fill="#1a1a1a"/>
+            <circle class="bird-eye" cx="60" cy="42" r="3" fill="#1a1a1a"/>
+            <path class="bird-beak" d="M50,35 L45,40 L50,42 Z" fill="#f59e0b"/>
+        </svg>
+        <div class="bird-message" id="birdMessage">Welcome to Faraashi Blogs!</div>
+    </div>
+
+    <!-- Bird Chat Interface -->
+    <div class="bird-chat-container" id="birdChatContainer">
+        <div class="bird-chat-header">
+            <h3>🐦 Chat with Faraashi Bird</h3>
+            <button class="bird-chat-close" id="birdChatClose">&times;</button>
+        </div>
+        <div class="bird-chat-messages" id="birdChatMessages">
+            <div class="bird-chat-message bird">
+                Welcome to Faraashi Blogs! I'm here to help you explore our stories. What would you like to know?
+            </div>
+        </div>
+        <div class="bird-chat-input-container">
+            <input type="text" class="bird-chat-input" id="birdChatInput" placeholder="Ask me anything about the blogs...">
+            <button class="bird-chat-send" id="birdChatSend">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <line x1="22" y1="2" x2="11" y2="13"></line>
+                    <polygon points="22 2 15 22 11 13 2 9 22 2"></polygon>
+                </svg>
+            </button>
+        </div>
+    </div>
+
+    <header class="site-header">
+        <div class="container">
+            <nav class="main-nav">
+                <a href="/" class="logo">
+                    <span class="logo-text">Faraashi</span>
+                    <span class="logo-accent">Blogs</span>
+                </a>
+
+                <div class="nav-links">
+                    <a href="/" class="nav-link">Home</a>
+                    <form class="nav-search" role="search" action="/" method="get" onsubmit="return true;">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+                        <input type="text" name="q" id="siteSearch" placeholder="Search articles…" autocomplete="off">
+                    </form>
+                    {% if session.logged_in %}
+                    <a href="/dashboard" class="nav-link">Dashboard</a>
+                    <a href="/create" class="nav-link nav-link-primary">Write Story</a>
+                    <a href="/logout" class="nav-link">Logout</a>
+                    {% else %}
+                    <a href="/login" class="nav-link nav-link-primary">Admin Login</a>
+                    {% endif %}
+                </div>
+
+                <button class="mobile-menu-toggle" aria-label="Toggle menu" id="menuToggle">
+                    <span></span><span></span><span></span>
+                </button>
+            </nav>
+        </div>
+    </header>
+
+    {% with messages = get_flashed_messages(with_categories=true) %}
+      {% if messages %}
+        <div class="flash-messages" id="flashMessages">
+          {% for category, msg in messages %}
+            <div class="flash-message flash-{{ category }}">
+              <p>{{ msg }}</p>
+            </div>
+          {% endfor %}
+        </div>
+      {% endif %}
+    {% endwith %}
+
+    <main class="main-content">
+        {% block content %}{% endblock %}
+    </main>
+
+    <button class="back-to-top" id="backToTop" aria-label="Back to top">↑</button>
+
+    <div class="woven-border-bottom"></div>
+
+    <footer class="site-footer">
+        <div class="container">
+            <div class="footer-grid">
+                <div class="footer-brand">
+                    <span class="logo-text">Faraashi</span> <span class="logo-accent">Blogs</span>
+                    <p class="footer-tagline">Every story, unrolled like a carpet.</p>
+                    <div class="footer-social">
+                        <a href="https://twitter.com" aria-label="Twitter" target="_blank" rel="noopener">𝕏</a>
+                        <a href="https://instagram.com" aria-label="Instagram" target="_blank" rel="noopener">◎</a>
+                        <a href="mailto:hello@faraashi.blog" aria-label="Email">✉</a>
+                    </div>
+                </div>
+                <div>
+                    <div class="footer-heading">Navigate</div>
+                    <div class="footer-links">
+                        <a href="/">Home</a>
+                        {% if session.logged_in %}
+                        <a href="/dashboard">Dashboard</a>
+                        <a href="/create">Create Post</a>
+                        {% else %}
+                        <a href="/login">Admin Login</a>
+                        {% endif %}
+                    </div>
+                </div>
+                <div>
+                    <div class="footer-heading">Categories</div>
+                    <div class="footer-links">
+                        <a href="/?category=Technology">Technology</a>
+                        <a href="/?category=Travel">Travel</a>
+                        <a href="/?category=Lifestyle">Lifestyle</a>
+                        <a href="/?category=Personal">Personal</a>
+                    </div>
+                </div>
+            </div>
+            <div class="footer-bottom">
+                <p>&copy; <span id="current-year"></span> Faraashi Blogs. A room for stories.</p>
+            </div>
+        </div>
+    </footer>
+
+    <script>
+        // Mobile menu
+        document.getElementById('menuToggle').addEventListener('click', function() {
+            document.querySelector('.nav-links').classList.toggle('active');
+        });
+        document.getElementById('current-year').textContent = new Date().getFullYear();
+
+        // Scroll progress bar
+        const progressBar = document.getElementById('scrollProgress');
+        window.addEventListener('scroll', function() {
+            const h = document.documentElement;
+            const scrolled = (h.scrollTop) / (h.scrollHeight - h.clientHeight) * 100;
+            progressBar.style.width = (scrolled || 0) + '%';
+        });
+
+        // Back to top
+        const backToTop = document.getElementById('backToTop');
+        window.addEventListener('scroll', function() {
+            backToTop.classList.toggle('visible', window.scrollY > 480);
+        });
+        backToTop.addEventListener('click', function() {
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        });
+
+        // Auto-dismiss flash messages from DOM after animation
+        const flash = document.getElementById('flashMessages');
+        if (flash) { setTimeout(() => flash.remove(), 5200); }
+
+        // Site search: if a blog grid exists on this page, filter client-side; otherwise
+        // send the query along so the home page can pick it up via ?q=
+        const siteSearchInput = document.getElementById('siteSearch');
+        if (siteSearchInput) {
+            const params = new URLSearchParams(window.location.search);
+            if (params.get('q')) siteSearchInput.value = params.get('q');
+        }
+
+        // Custom Cursor
+        const cursor = document.getElementById('customCursor');
+        const trail = document.getElementById('cursorTrail');
+        let mouseX = 0, mouseY = 0;
+        let cursorX = 0, cursorY = 0;
+        let trailX = 0, trailY = 0;
+
+        document.addEventListener('mousemove', (e) => {
+            mouseX = e.clientX;
+            mouseY = e.clientY;
+        });
+
+        function animateCursor() {
+            cursorX += (mouseX - cursorX) * 0.15;
+            cursorY += (mouseY - cursorY) * 0.15;
+            trailX += (mouseX - trailX) * 0.08;
+            trailY += (mouseY - trailY) * 0.08;
+
+            cursor.style.left = cursorX + 'px';
+            cursor.style.top = cursorY + 'px';
+            trail.style.left = trailX + 'px';
+            trail.style.top = trailY + 'px';
+
+            requestAnimationFrame(animateCursor);
+        }
+        animateCursor();
+
+        // Cursor hover effects on interactive elements
+        const interactiveElements = document.querySelectorAll('a, button, input, textarea, select, .blog-card, .nav-link');
+        interactiveElements.forEach(el => {
+            el.addEventListener('mouseenter', () => cursor.classList.add('hover'));
+            el.addEventListener('mouseleave', () => cursor.classList.remove('hover'));
+        });
+
+        // Dynamic Background Colors - Red, Black, Blue Wave Effect
+        const animatedBg = document.getElementById('animatedBackground');
+        
+        document.addEventListener('mousemove', (e) => {
+            const x = e.clientX / window.innerWidth;
+            const y = e.clientY / window.innerHeight;
+            
+            // Wave effect with red, black, and blue
+            const wave1 = Math.sin(x * Math.PI * 2 + Date.now() / 1000) * 0.5 + 0.5;
+            const wave2 = Math.sin(y * Math.PI * 2 + Date.now() / 1200) * 0.5 + 0.5;
+            const wave3 = Math.sin((x + y) * Math.PI + Date.now() / 800) * 0.5 + 0.5;
+            
+            // Red component (0-255)
+            const red = Math.floor(wave1 * 150 + 50);
+            // Blue component (0-255)
+            const blue = Math.floor(wave2 * 150 + 50);
+            // Black/dark component (lightness)
+            const darkness = Math.floor(wave3 * 30 + 10);
+            
+            const color1 = `rgb(${red}, ${darkness}, ${darkness})`;
+            const color2 = `rgb(${darkness}, ${darkness}, ${blue})`;
+            const color3 = `rgb(${Math.floor(red * 0.7)}, ${darkness}, ${Math.floor(blue * 0.8)})`;
+            
+            animatedBg.style.background = `linear-gradient(${135 + x * 45}deg, ${color1}, ${color2}, ${color3})`;
+        });
+
+        // Flying Bird Animation
+        const bird = document.getElementById('flyingBird');
+        const birdMessage = document.getElementById('birdMessage');
+        const birdChatContainer = document.getElementById('birdChatContainer');
+        const birdChatClose = document.getElementById('birdChatClose');
+        const birdChatInput = document.getElementById('birdChatInput');
+        const birdChatSend = document.getElementById('birdChatSend');
+        const birdChatMessages = document.getElementById('birdChatMessages');
+        
+        let birdX = 100;
+        let birdY = 200;
+        let birdDirection = 1;
+        let birdSpeed = 2;
+        let isChatOpen = false;
+
+        function animateBird() {
+            if (!isChatOpen) {
+                birdX += birdSpeed * birdDirection;
+                
+                if (birdX > window.innerWidth - 150) {
+                    birdDirection = -1;
+                    bird.style.transform = 'scaleX(-1)';
+                } else if (birdX < 50) {
+                    birdDirection = 1;
+                    bird.style.transform = 'scaleX(1)';
+                }
+
+                // Gentle vertical movement
+                birdY = 200 + Math.sin(Date.now() / 1000) * 30;
+
+                bird.style.left = birdX + 'px';
+                bird.style.top = birdY + 'px';
+            }
+
+            requestAnimationFrame(animateBird);
+        }
+
+        // Start bird animation after a delay
+        setTimeout(() => {
+            bird.style.opacity = '1';
+            animateBird();
+        }, 1000);
+
+        // Bird click interaction - open chat
+        bird.addEventListener('click', () => {
+            isChatOpen = true;
+            birdChatContainer.classList.add('active');
+            birdMessage.style.opacity = '0';
+            birdChatInput.focus();
+        });
+
+        // Close chat
+        birdChatClose.addEventListener('click', () => {
+            isChatOpen = false;
+            birdChatContainer.classList.remove('active');
+            birdMessage.style.opacity = '1';
+        });
+
+        // Chat functionality
+        const birdResponses = {
+            greeting: [
+                "Welcome to Faraashi Blogs! I'm your guide to exploring our stories.",
+                "Hello! I'm here to help you discover amazing content on Faraashi Blogs."
+            ],
+            help: [
+                "I can help you find blogs by category, search for specific topics, or navigate the site. Just ask!",
+                "You can ask me about our blog categories, how to search for articles, or general site navigation."
+            ],
+            categories: [
+                "We have blogs in Technology, Travel, Lifestyle, Personal, and many more categories!",
+                "Our main categories include Technology, Travel, Lifestyle, and Personal stories."
+            ],
+            search: [
+                "Use the search bar at the top to find articles by title or topic.",
+                "You can search for articles using the search input in the navigation bar."
+            ],
+            latest: [
+                "Check out our homepage to see the latest featured articles!",
+                "The homepage showcases our most recent and featured blog posts."
+            ],
+            create: [
+                "If you're logged in as admin, you can create new posts by clicking 'Write Story' in the navigation.",
+                "Admin users can create new blog posts through the 'Write Story' link in the menu."
+            ],
+            default: [
+                "That's a great question! Feel free to explore our blog categories or use the search feature.",
+                "I'm here to help! You can ask me about categories, searching, or navigating the site.",
+                "Let me help you discover more about Faraashi Blogs. What specific topic interests you?"
+            ]
+        };
+
+        function getBirdResponse(userMessage) {
+            const message = userMessage.toLowerCase();
+            
+            if (message.includes('hello') || message.includes('hi') || message.includes('hey')) {
+                return birdResponses.greeting[Math.floor(Math.random() * birdResponses.greeting.length)];
+            } else if (message.includes('help') || message.includes('what can you')) {
+                return birdResponses.help[Math.floor(Math.random() * birdResponses.help.length)];
+            } else if (message.includes('categor') || message.includes('topic') || message.includes('type')) {
+                return birdResponses.categories[Math.floor(Math.random() * birdResponses.categories.length)];
+            } else if (message.includes('search') || message.includes('find') || message.includes('look for')) {
+                return birdResponses.search[Math.floor(Math.random() * birdResponses.search.length)];
+            } else if (message.includes('latest') || message.includes('new') || message.includes('recent')) {
+                return birdResponses.latest[Math.floor(Math.random() * birdResponses.latest.length)];
+            } else if (message.includes('create') || message.includes('write') || message.includes('post')) {
+                return birdResponses.create[Math.floor(Math.random() * birdResponses.create.length)];
+            } else {
+                return birdResponses.default[Math.floor(Math.random() * birdResponses.default.length)];
+            }
+        }
+
+        function addChatMessage(message, isUser) {
+            const messageDiv = document.createElement('div');
+            messageDiv.className = `bird-chat-message ${isUser ? 'user' : 'bird'}`;
+            messageDiv.textContent = message;
+            birdChatMessages.appendChild(messageDiv);
+            birdChatMessages.scrollTop = birdChatMessages.scrollHeight;
+        }
+
+        function handleUserMessage() {
+            const message = birdChatInput.value.trim();
+            if (message) {
+                addChatMessage(message, true);
+                birdChatInput.value = '';
+                
+                // Simulate bird thinking
+                setTimeout(() => {
+                    const response = getBirdResponse(message);
+                    addChatMessage(response, false);
+                }, 800);
+            }
+        }
+
+        birdChatSend.addEventListener('click', handleUserMessage);
+        birdChatInput.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') {
+                handleUserMessage();
+            }
+        });
+    </script>
+    {% block scripts %}{% endblock %}
+</body>
+</html>

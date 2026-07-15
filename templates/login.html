@@ -1,0 +1,74 @@
+{% extends 'base.html' %}
+{% block title %}Admin Login - Faraashi Blogs{% endblock %}
+{% block content %}
+<section class="form-section">
+    <div class="container">
+        <div class="form-container form-container-small">
+            <div class="form-header">
+                <span class="hero-eyebrow">Faraashi Blogs</span>
+                <h1>Admin Login</h1>
+                <p class="form-subtitle">Access your dashboard to manage articles</p>
+            </div>
+
+            <form method="POST" action="/login" class="login-form">
+                <div class="form-group">
+                    <label for="username">Username</label>
+                    <input
+                        type="text"
+                        id="username"
+                        name="username"
+                        required
+                        placeholder="Enter your username"
+                        autocomplete="username"
+                    >
+                </div>
+
+                <div class="form-group">
+                    <label for="password">
+                        Password
+                        <a href="#" id="togglePassword" style="font-weight:400; font-size: var(--fs-xs); color: var(--ink-muted);">Show</a>
+                    </label>
+                    <input
+                        type="password"
+                        id="password"
+                        name="password"
+                        required
+                        placeholder="Enter your password"
+                        autocomplete="current-password"
+                    >
+                </div>
+
+                <div class="form-group checkbox-label" style="margin-bottom: 0;">
+                    <input type="checkbox" name="remember" id="remember">
+                    <label for="remember" style="margin: 0; font-weight: 400; cursor: pointer;">Keep me signed in on this device</label>
+                </div>
+
+                <div class="form-actions">
+                    <a href="/" class="btn btn-secondary">Back to Home</a>
+                    <button type="submit" class="btn btn-primary">Login</button>
+                </div>
+            </form>
+
+            <div class="form-footer">
+                <p class="security-note">
+                    <span class="security-icon">🔒</span>
+                    Secure login for authorized administrators only
+                </p>
+            </div>
+        </div>
+    </div>
+</section>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    const toggle = document.getElementById('togglePassword');
+    const pwd = document.getElementById('password');
+    toggle.addEventListener('click', function(e) {
+        e.preventDefault();
+        const isPassword = pwd.type === 'password';
+        pwd.type = isPassword ? 'text' : 'password';
+        toggle.textContent = isPassword ? 'Hide' : 'Show';
+    });
+</script>
+{% endblock %}

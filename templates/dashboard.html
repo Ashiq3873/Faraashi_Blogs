@@ -1,0 +1,159 @@
+{% extends 'base.html' %}
+{% block title %}Dashboard - Faraashi Blogs{% endblock %}
+{% block content %}
+<section class="dashboard-section">
+    <div class="container">
+        <div class="dashboard-header">
+            <div>
+                <h1>Admin Dashboard</h1>
+                <p class="dashboard-subtitle">Manage your articles and content</p>
+            </div>
+            <a href="/create" class="btn btn-primary btn-large">
+                <span class="btn-icon">+</span> Create New Article
+            </a>
+        </div>
+
+        <div class="dashboard-stats">
+            <div class="stat-card">
+                <div class="stat-icon">📄</div>
+                <div class="stat-info">
+                    <span class="stat-number">{{ blogs|length }}</span>
+                    <span class="stat-label">Total Articles</span>
+                </div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-icon">✅</div>
+                <div class="stat-info">
+                    {% set ns = namespace(published=0) %}
+                    {% for blog in blogs %}
+                        {% if blog.published is not defined or blog.published %}{% set ns.published = ns.published + 1 %}{% endif %}
+                    {% endfor %}
+                    <span class="stat-number">{{ ns.published }}</span>
+                    <span class="stat-label">Published</span>
+                </div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-icon">🖼️</div>
+                <div class="stat-info">
+                    <span class="stat-number">{{ blogs|selectattr('image_url')|list|length }}</span>
+                    <span class="stat-label">With Cover Image</span>
+                </div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-icon">🗂️</div>
+                <div class="stat-info">
+                    <span class="stat-number">{{ blogs|map(attribute='category')|select|unique|list|length }}</span>
+                    <span class="stat-label">Categories</span>
+                </div>
+            </div>
+        </div>
+
+        <div class="dashboard-content">
+            <div style="padding: var(--sp-lg) var(--sp-lg) 0;">
+                <div class="section-header" style="margin-bottom: var(--sp-md); text-align:left;">
+                    <h2 style="font-size: var(--fs-2xl);">Your Articles</h2>
+                    <p class="section-subtitle">View, filter, and manage all your content</p>
+                </div>
+                {% if blogs %}
+                <div class="dashboard-toolbar">
+                    <div class="dashboard-search">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+                        <input type="text" id="dashSearch" placeholder="Search your articles…">
+                    </div>
+                    <div class="dashboard-sort">
+                        <button class="sort-btn active" data-sort="newest">Newest</button>
+                        <button class="sort-btn" data-sort="oldest">Oldest</button>
+                        <button class="sort-btn" data-sort="title">Title A–Z</button>
+                    </div>
+                </div>
+                {% endif %}
+            </div>
+
+            {% if blogs %}
+            <div class="articles-table">
+                <div class="table-header">
+                    <div class="table-cell table-cell-title">Title</div>
+                    <div class="table-cell">Status</div>
+                    <div class="table-cell table-cell-date">Created</div>
+                    <div class="table-cell table-cell-actions">Actions</div>
+                </div>
+                <div id="tableBody">
+                {% for blog in blogs %}
+                <div class="table-row"
+                     data-title="{{ blog.title|lower }}"
+                     data-date="{{ blog.created_at.isoformat() if blog.created_at else '' }}">
+                    <div class="table-cell table-cell-title">
+                        <a href="/blog/{{ blog._id }}" class="article-link">{{ blog.title }}</a>
+                        {% if blog.image_url %}
+                        <span class="has-image-indicator" title="Has cover image">🖼️</span>
+                        {% endif %}
+                    </div>
+                    <div class="table-cell">
+                        {% if blog.published is defined and not blog.published %}
+                        <span class="status-badge status-draft">Draft</span>
+                        {% else %}
+                        <span class="status-badge status-published">Published</span>
+                        {% endif %}
+                    </div>
+                    <div class="table-cell table-cell-date">
+                        {{ blog.created_at.strftime('%b %d, %Y') if blog.created_at else 'N/A' }}
+                    </div>
+                    <div class="table-cell table-cell-actions">
+                        <a href="/blog/{{ blog._id }}" class="action-btn action-btn-view" title="View">👁️</a>
+                        <a href="/edit/{{ blog._id }}" class="action-btn action-btn-edit" title="Edit">✏️</a>
+                        <form action="/delete/{{ blog._id }}" method="POST" class="delete-form-inline" onsubmit="return confirm('Are you sure you want to delete this article?');">
+                            <button type="submit" class="action-btn action-btn-delete" title="Delete">🗑️</button>
+                        </form>
+                    </div>
+                </div>
+                {% endfor %}
+                </div>
+                <p id="dashNoResults" style="display:none; text-align:center; color: var(--ink-muted); padding: var(--sp-lg); font-family: var(--font-ui);">No articles match your search.</p>
+            </div>
+            {% else %}
+            <div class="empty-state" style="margin: var(--sp-lg);">
+                <div class="empty-icon">📭</div>
+                <h3>No articles yet</h3>
+                <p>You haven't published any articles. Start creating content to share with your audience.</p>
+                <a href="/create" class="btn btn-primary">Create Your First Article</a>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</section>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    const dashSearch = document.getElementById('dashSearch');
+    const rows = Array.from(document.querySelectorAll('#tableBody .table-row'));
+    const tableBody = document.getElementById('tableBody');
+    const dashNoResults = document.getElementById('dashNoResults');
+
+    function filterRows() {
+        const query = (dashSearch?.value || '').trim().toLowerCase();
+        let visible = 0;
+        rows.forEach(row => {
+            const show = !query || row.dataset.title.includes(query);
+            row.style.display = show ? '' : 'none';
+            if (show) visible++;
+        });
+        if (dashNoResults) dashNoResults.style.display = visible === 0 ? 'block' : 'none';
+    }
+    if (dashSearch) dashSearch.addEventListener('input', filterRows);
+
+    document.querySelectorAll('.sort-btn').forEach(btn => {
+        btn.addEventListener('click', () => {
+            document.querySelectorAll('.sort-btn').forEach(b => b.classList.remove('active'));
+            btn.classList.add('active');
+            const mode = btn.dataset.sort;
+            const sorted = [...rows].sort((a, b) => {
+                if (mode === 'title') return a.dataset.title.localeCompare(b.dataset.title);
+                if (mode === 'oldest') return (a.dataset.date || '').localeCompare(b.dataset.date || '');
+                return (b.dataset.date || '').localeCompare(a.dataset.date || '');
+            });
+            sorted.forEach(row => tableBody.appendChild(row));
+        });
+    });
+</script>
+{% endblock %}
